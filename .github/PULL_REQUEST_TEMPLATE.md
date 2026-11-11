@@ -1,10 +1,14 @@
-Fixes #<issue_number_goes_here>
+## Description
 
-> It's a good idea to open an issue first for discussion.
+Describe the user-visible or maintenance change and its reason.
 
-**Description**
-A brief summary of what this PR does and why.
+## Verification
 
-- [ ] Tests pass
-- [ ] README updated if needed
-- [ ] No breaking changes (or described below)
+- Commands or workflows run:
+- Known gaps:
+
+## Security and documentation impact
+
+- [ ] Authorization or tenant-isolation changes include relevant coverage
+- [ ] Documentation reflects behavior changes
+- [ ] Breaking changes are described

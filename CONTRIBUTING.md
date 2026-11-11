@@ -1,46 +1,23 @@
-## Contributing
+# Contributing
 
-We welcome contributions of all kinds to improve this project! Here's how you can get involved:
+Thanks for helping improve Multi-Tenant RAG. Contributions that make authorization behavior easier to understand and independently verify are especially useful.
 
-1. **Fork the Repository**: Start by forking the repository to your GitHub account.
+## Local development
 
-2. **Clone Your Fork**: Clone the forked repository to your local machine:
+1. Install Docker Compose, Python 3.12+, `uv`, Node.js 20+, and pnpm.
+2. Run `make init-env` to create a private `.env` with fresh local credentials.
+3. Start and seed the demo with `make up` and `make seed`.
+4. Install the Python development dependencies with `uv sync --extra dev` and frontend dependencies with `cd apps/web && pnpm install`.
+5. Run `make lint`, `make typecheck`, and `make test`. Run `make test-security` against a migrated, seeded PostgreSQL instance using the runtime role.
+6. For browser checks, run `cd apps/web && pnpm exec playwright install chromium`, then `make test-e2e`.
 
-   ```bash
-   git clone <repo_url>
-   cd repo_dir
-   ```
+## Change guidelines
 
-3. **Create a Branch**: Create a new branch for your feature or bug fix:
+- Preserve tenant and document authorization in SQL as well as API checks.
+- Add PostgreSQL runtime-role integration coverage for authorization changes.
+- Never use the migration role as evidence that RLS protects a request.
+- Keep demo data fictional and evaluation reports reproducible.
+- Update the architecture/security docs when trust boundaries change.
+- Do not include credentials, customer records, local model caches, or generated private files.
 
-   ```bash
-   git checkout -b feature-name
-   ```
-
-4. **Make Changes**: Make your changes to the codebase. Be sure to follow existing code style and conventions.
-
-5. **Commit Changes**: Commit your changes with a clear and descriptive message:
-
-   ```bash
-   git commit -m "Add detailed description of the changes"
-   ```
-
-6. **Push Changes**: Push your changes to your fork:
-
-   ```bash
-   git push origin feature-name
-   ```
-
-7. **Submit a Pull Request**: Open a pull request from your branch to the main repository's branch. Include a detailed description of your changes and the problem they solve.
-
-8. **Review and Feedback**: Participate in the review process. Make any requested changes, and your contribution will be merged!
-
-### Guidelines
-
-- Ensure your code follows the existing style and conventions.
-- Include tests for any new functionality or bug fixes.
-- Write clear, concise commit messages and pull request descriptions.
-
-### Issues
-
-Feel free to report bugs or suggest enhancements by creating an issue. Be sure to include detailed information about the problem and, if possible, steps to reproduce it.
+Open a focused pull request with the reason for the change, tests run, and any remaining verification gap. See [SECURITY.md](SECURITY.md) for vulnerability reports and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community expectations.

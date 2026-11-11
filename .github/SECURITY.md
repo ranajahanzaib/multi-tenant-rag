@@ -4,6 +4,6 @@
 
 Please do not report security vulnerabilities through public GitHub issues.
 
-Instead, report them via GitHub's private [Security Advisories](../../security/advisories/new) feature. Include as much detail as possible: a description of the issue, steps to reproduce, and potential impact.
+Instead, report them through GitHub's private [Security Advisories](https://github.com/ranajahanzaib/multi-tenant-rag/security/advisories/new). Include the affected commit or version, impact, reproduction steps, and any safe mitigation. Do not include real customer data or credentials.
 
-You can expect an acknowledgment within 48 hours and a resolution timeline once the issue is confirmed.
+The project does not currently publish a response-time commitment.

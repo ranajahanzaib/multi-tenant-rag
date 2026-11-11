@@ -1,26 +1,31 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
+about: Report a reproducible problem
+title: ""
 labels: bug
-assignees: ''
+assignees: ""
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Summary
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. See error
+Describe the observed behavior.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Steps to reproduce
 
-**Environment**
-- OS: [e.g. macOS 26.4.1, Windows 11, Ubuntu 24.04.4]
-- Version: [e.g. 1.0.0]
+1.
+2.
+3.
 
-**Additional context**
-Add any other context or screenshots here.
+## Expected behavior
+
+Describe what should happen.
+
+## Environment
+
+- Operating system:
+- Multi-Tenant RAG commit or version:
+- Docker and Compose versions:
+
+## Additional context
+
+Do not include real tenant data, credentials, session tokens, or private documents. Report security vulnerabilities through [the security policy](../../SECURITY.md), not a public issue.
