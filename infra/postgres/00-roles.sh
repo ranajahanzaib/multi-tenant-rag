@@ -9,6 +9,8 @@ psql --set=ON_ERROR_STOP=1 \
   --set=migrator_password="$MIGRATOR_PASSWORD" \
   --set=runtime_password="$RUNTIME_PASSWORD" \
   --set=worker_password="$WORKER_PASSWORD" <<'SQL'
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE ROLE tenantground_migrator LOGIN PASSWORD :'migrator_password' NOSUPERUSER NOBYPASSRLS;
 CREATE ROLE tenantground LOGIN PASSWORD :'runtime_password' NOSUPERUSER NOBYPASSRLS;
 CREATE ROLE tenantground_worker LOGIN PASSWORD :'worker_password' NOSUPERUSER NOBYPASSRLS;
