@@ -1,0 +1,81 @@
+name: multi-tenant-rag
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run make init-env to generate local credentials}
+      MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD:?Run make init-env to generate local credentials}
+      RUNTIME_PASSWORD: ${RUNTIME_PASSWORD:?Run make init-env to generate local credentials}
+      WORKER_PASSWORD: ${WORKER_PASSWORD:?Run make init-env to generate local credentials}
+      POSTGRES_DB: multi_tenant_rag
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/00-roles.sh:/docker-entrypoint-initdb.d/00-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d multi_tenant_rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+asyncpg://tenantground:${RUNTIME_PASSWORD}@db:5432/multi_tenant_rag
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://tenantground_migrator:${MIGRATOR_PASSWORD}@db:5432/multi_tenant_rag
+      JWT_SECRET: ${JWT_SECRET:?Run make init-env to generate local credentials}
+      STORAGE_PATH: /var/lib/multi-tenant-rag/private
+      DEMO_MODE: ${DEMO_MODE:-true}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Run make init-env to generate local credentials}
+      DEMO_DATE: ${DEMO_DATE:-2026-11-10}
+      LLM_PROVIDER: ${LLM_PROVIDER:-evidence}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+    command: sh -c "alembic upgrade head && uvicorn multi_tenant_rag.main:app --host 0.0.0.0 --port 8000"
+    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - private_files:/var/lib/multi-tenant-rag/private
+    depends_on:
+      db: { condition: service_healthy }
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: python -m multi_tenant_rag.worker
+    environment:
+      APP_ENV: development
+      JWT_SECRET: ${JWT_SECRET:?Run make init-env to generate local credentials}
+      DATABASE_URL: postgresql+asyncpg://tenantground_worker:${WORKER_PASSWORD}@db:5432/multi_tenant_rag
+      STORAGE_PATH: /var/lib/multi-tenant-rag/private
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
+    volumes:
+      - private_files:/var/lib/multi-tenant-rag/private
+      - embedding_cache:/root/.cache/torch
+      - embedding_cache:/root/.cache/huggingface
+    depends_on:
+      db: { condition: service_healthy }
+      api: { condition: service_started }
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_DEMO_MODE: ${DEMO_MODE:-true}
+      VITE_DEMO_EMAIL: ${DEMO_EMAIL:-admin@northstar.example}
+    ports: ["127.0.0.1:5173:5173"]
+    depends_on: [api]
+  ollama:
+    image: ollama/ollama:latest
+    profiles: [local-ai]
+    volumes:
+      - ollama_data:/root/.ollama
+    ports: ["127.0.0.1:11434:11434"]
+volumes:
+  postgres_data:
+  private_files:
+  embedding_cache:
+  ollama_data:

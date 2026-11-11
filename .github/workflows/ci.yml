@@ -1,33 +1,133 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
+permissions:
+  contents: read
 jobs:
-  build:
+  checks:
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+          POSTGRES_DB: multi_tenant_rag
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d multi_tenant_rag"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generate ephemeral test credentials
+        run: |
+          python - <<'PY'
+          import os
+          import secrets
 
-      - name: Set up Node.js
+          values = {
+              "MIGRATOR_PASSWORD": secrets.token_hex(32),
+              "RUNTIME_PASSWORD": secrets.token_hex(32),
+              "WORKER_PASSWORD": secrets.token_hex(32),
+              "JWT_SECRET": secrets.token_hex(32),
+              "DEMO_PASSWORD": secrets.token_hex(32),
+          }
+          values["MIGRATION_DATABASE_URL"] = f"postgresql+asyncpg://tenantground_migrator:{values['MIGRATOR_PASSWORD']}@localhost:5432/multi_tenant_rag"
+          values["DATABASE_URL"] = f"postgresql+asyncpg://tenantground:{values['RUNTIME_PASSWORD']}@localhost:5432/multi_tenant_rag"
+          values["WORKER_DATABASE_URL"] = f"postgresql+asyncpg://tenantground_worker:{values['WORKER_PASSWORD']}@localhost:5432/multi_tenant_rag"
+          values["TEST_DATABASE_URL"] = values["DATABASE_URL"]
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              for key, value in values.items():
+                  env_file.write(f"{key}={value}\n")
+          PY
+      - name: Initialize database roles
+        env:
+          PGPASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+          PGHOST: localhost
+          PGUSER: postgres
+          PGDATABASE: multi_tenant_rag
+        run: sh infra/postgres/00-roles.sh
+      - name: Install Python dependencies
+        run: uv sync --locked --extra dev
+      - name: Migrate database
+        run: uv run alembic upgrade head
+      - name: Lint and type check Python
+        run: |
+          uv run --locked --extra dev ruff format --check apps/api scripts
+          uv run --locked --extra dev ruff check apps/api scripts
+          uv run --locked --extra dev mypy apps/api/multi_tenant_rag scripts/evaluate.py
+      - name: Seed demo organizations
+        env:
+          APP_ENV: development
+          DEMO_MODE: "true"
+          STORAGE_PATH: /tmp/multi-tenant-rag-private
+        run: uv run python -m multi_tenant_rag.seed
+      - name: Start lexical-capable ingestion worker
+        env:
+          APP_ENV: development
+          STORAGE_PATH: /tmp/multi-tenant-rag-private
+        run: |
+          DATABASE_URL="$WORKER_DATABASE_URL" nohup uv run python -m multi_tenant_rag.worker >/tmp/multi-tenant-rag-worker.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            pending=$(PGPASSWORD="${{ github.run_id }}-${{ github.run_attempt }}" psql -h localhost -U postgres -d multi_tenant_rag -tAc "SELECT count(*) FROM ingestion_jobs WHERE status IN ('queued','retry','processing')")
+            if [ "$pending" = "0" ]; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/multi-tenant-rag-worker.log
+          exit 1
+      - name: Test with runtime role
+        run: uv run --locked --extra dev pytest -q
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      # Uncomment and adjust the steps below to match your project's setup
-
-      # - name: Install dependencies
-      #   run: npm ci
-
-      # - name: Lint
-      #   run: npm run lint
-
-      # - name: Run tests
-      #   run: npm test
-
-      # - name: Build
-      #   run: npm run build
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        working-directory: apps/web
+        run: pnpm install --frozen-lockfile
+      - name: Check frontend dependency advisories
+        working-directory: apps/web
+        run: pnpm audit --audit-level=moderate
+      - name: Check and build frontend
+        working-directory: apps/web
+        run: pnpm run build
+      - name: Start API
+        env:
+          APP_ENV: development
+          STORAGE_PATH: /tmp/multi-tenant-rag-private
+          EMBEDDING_ENABLED: "false"
+          PYTHONPATH: apps/api
+        run: |
+          nohup uv run uvicorn multi_tenant_rag.main:app --host 127.0.0.1 --port 8000 >/tmp/multi-tenant-rag-api.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail http://127.0.0.1:8000/health; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/multi-tenant-rag-api.log
+          exit 1
+      - name: Run deterministic evaluation smoke set
+        env:
+          MULTI_TENANT_RAG_API_URL: http://127.0.0.1:8000
+        run: uv run python scripts/evaluate.py
+      - name: Install Playwright browser
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run browser smoke tests
+        working-directory: apps/web
+        env:
+          CI: "true"
+          E2E_API_URL: http://127.0.0.1:8000
+        run: pnpm run test:e2e
