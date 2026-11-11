@@ -14,5 +14,5 @@ CREATE ROLE tenantground LOGIN PASSWORD :'runtime_password' NOSUPERUSER NOBYPASS
 CREATE ROLE tenantground_worker LOGIN PASSWORD :'worker_password' NOSUPERUSER NOBYPASSRLS;
 GRANT tenantground TO tenantground_migrator;
 GRANT tenantground_worker TO tenantground_migrator;
-ALTER DATABASE tenantground OWNER TO tenantground_migrator;
+ALTER DATABASE multi_tenant_rag OWNER TO tenantground_migrator;
 SQL

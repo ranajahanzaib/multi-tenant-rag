@@ -7,9 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     app_env: str = "development"
-    database_url: str = "postgresql+asyncpg://tenantground@localhost:5432/tenantground"
+    database_url: str = "postgresql+asyncpg://tenantground@localhost:5432/multi_tenant_rag"
     migration_database_url: str = (
-        "postgresql+asyncpg://tenantground_migrator@localhost:5432/tenantground"
+        "postgresql+asyncpg://tenantground_migrator@localhost:5432/multi_tenant_rag"
     )
     jwt_secret: str = ""
     jwt_issuer: str = "tenantground"
