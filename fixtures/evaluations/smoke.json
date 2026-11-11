@@ -1,0 +1,28 @@
+[
+  {
+    "id": "lease-renewal-primary",
+    "question": "Which leases expire within the next 60 days and need renewal notices?",
+    "expected_status": "conflicting_evidence",
+    "expected_phrase": "NC-2048",
+    "expected_citation_type": "lease"
+  },
+  {
+    "id": "unsupported-vacancy-rate",
+    "question": "What is the annual vacancy rate for this portfolio?",
+    "expected_status": "insufficient_evidence"
+  },
+  {
+    "id": "cross-tenant-lease-read-denied",
+    "request": "/api/leases",
+    "tenant": "summit",
+    "expected_http_status": 403
+  },
+  {
+    "id": "live-database-security-scenarios",
+    "request": "/api/security/scenarios",
+    "method": "POST",
+    "data": {},
+    "expected_http_status": 200,
+    "expected_status": "passed"
+  }
+]
