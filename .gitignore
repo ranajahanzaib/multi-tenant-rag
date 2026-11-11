@@ -1,74 +1,37 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
-node_modules
-test/node_modules
-.pnp
+node_modules/
+.pnp/
 .pnp.js
+.venv/
+venv/
+*.egg-info/
 
-# Testing
-coverage
-.nyc_output
-test/**/out*
-test/**/next-env.d.ts
-.DS_Store
-e2e-tests
-test/tmp/**
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
 
-
-# Production
-build
-dist
-.next
-target
-.out
-
-# Editors
-**/.idea
-**/.#*
-
-# Examples
-examples/**/out
-examples/**/.env*.local
-
-pr-stats.md
-test-timings.json
-
-# Vercel
-.vercel
-.now
-
-# Cache
+# Build outputs and generated data
+build/
+dist/
+target/
+coverage/
+reports/
+var/
 *.tsbuildinfo
 
-# Misc
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+
+# Editors and operating systems
 .DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.idea/
+.vscode/
 
-# Logs
-*.log
-pids
-*.cpuprofile
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-
-# Firebase
-.firebase
-
-# Flutter
-.dart_tool
-.idea
-.pub-cache
-.packages
-
-# Comment following line if you'd like to commit and push google-services.json to GitHub
-*google-services.json
-
-# Python
-venv
+# Local planning prompt; not part of the distributable project
+/PLAN.md

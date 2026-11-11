@@ -1,0 +1,14 @@
+.git
+.venv
+venv
+.env
+PLAN.md
+node_modules
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/dist
+var
+.env
