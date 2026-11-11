@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=75,<76"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-tenant-rag"
+version = "0.1.0"
+description = "Secure, tenant-aware AI knowledge retrieval for SaaS applications."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Rana Jahanzaib" }]
+requires-python = ">=3.12"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Database",
+  "Topic :: Security",
+]
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "sqlalchemy[asyncio]>=2.0,<3",
+  "asyncpg>=0.30,<1", "alembic>=1.13,<2", "pydantic-settings>=2.5,<3",
+  "pyjwt[crypto]>=2.9,<3", "pwdlib[argon2]>=0.2,<1", "python-multipart>=0.0.12,<1",
+  "python-dotenv>=1.0,<2"
+]
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "pytest-asyncio>=0.24,<2", "httpx>=0.27,<1", "ruff>=0.7,<1", "mypy>=1.11,<2"]
+local-ai = ["sentence-transformers>=3.1,<6"]
+documents = ["pymupdf>=1.24,<2"]
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["apps/api/tests"]
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501", "B008"] # SQL strings and FastAPI dependency declarations are intentional.
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+[tool.setuptools.packages.find]
+where = ["apps/api"]
