@@ -4,9 +4,6 @@ import os
 from datetime import date, timedelta
 
 import pytest
-from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from multi_tenant_rag.seed import (
     NORTHSTAR_PROPERTY_ID,
     ORG_ID,
@@ -16,6 +13,9 @@ from multi_tenant_rag.seed import (
     SUMMIT_UNIT_ID,
     USER_ID,
 )
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 
 @pytest.mark.asyncio
