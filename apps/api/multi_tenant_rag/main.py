@@ -1331,7 +1331,7 @@ async def ask(
             fused AS (SELECT id, sum(score) AS rrf FROM (
               SELECT id,1.0/(60+rank) AS score FROM lexical UNION ALL
               SELECT id,1.0/(60+rank) AS score FROM semantic) ranked GROUP BY id)
-            SELECT d.id,d.title,c.content,c.page_number,c.chunk_index,f.rrf
+            SELECT c.id,d.id AS document_id,d.title,c.content,c.page_number,c.chunk_index,f.rrf
             FROM fused f JOIN document_chunks c ON c.id=f.id JOIN documents d ON d.id=c.document_id
             ORDER BY f.rrf DESC LIMIT 8"""),
                 {
@@ -1343,7 +1343,7 @@ async def ask(
             retrieval_mode = "hybrid_rrf"
         else:
             doc_result = await tx.execute(
-                text("""SELECT d.id,d.title,c.content,c.page_number,c.chunk_index,
+                text("""SELECT c.id,d.id AS document_id,d.title,c.content,c.page_number,c.chunk_index,
               ts_rank(c.search_vector,plainto_tsquery('english',:q)) AS rrf FROM document_chunks c
               JOIN documents d ON d.id=c.document_id
               JOIN document_versions v ON v.id=c.document_version_id AND v.document_id=d.id
@@ -1361,7 +1361,7 @@ async def ask(
                     else "lease or renewal"
                 )
                 fallback_result = await tx.execute(
-                    text("""SELECT d.id,d.title,c.content,c.page_number,c.chunk_index,
+                    text("""SELECT c.id,d.id AS document_id,d.title,c.content,c.page_number,c.chunk_index,
                   ts_rank(c.search_vector,websearch_to_tsquery('english',:q)) AS rrf FROM document_chunks c
                   JOIN documents d ON d.id=c.document_id
                   JOIN document_versions v ON v.id=c.document_version_id AND v.document_id=d.id
