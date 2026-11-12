@@ -73,10 +73,12 @@ async def seed_documents(
         visibility = (
             "restricted" if filename in {"harbor_inspection.md", "cedar_financial.md"} else "tenant"
         )
+        deleted_at_val = "now()" if filename == "harbor_deleted_archive.md" else "NULL"
+        processing_status_val = "failed" if filename == "harbor_deleted_archive.md" else "queued"
         await tx.execute(
-            text("""INSERT INTO documents(id,tenant_id,uploaded_by,title,original_filename,content_type,
-              storage_key,visibility,processing_status,current_version,checksum)
-              VALUES(:id,:tenant,:owner,:title,:filename,'text/markdown',:key,:visibility,'queued',1,:checksum)
+            text(f"""INSERT INTO documents(id,tenant_id,uploaded_by,title,original_filename,content_type,
+              storage_key,visibility,processing_status,current_version,checksum,deleted_at)
+              VALUES(:id,:tenant,:owner,:title,:filename,'text/markdown',:key,:visibility,'{processing_status_val}',1,:checksum,{deleted_at_val})
               ON CONFLICT(id) DO NOTHING"""),
             {
                 "id": document_id,
@@ -90,9 +92,10 @@ async def seed_documents(
             },
         )
         version_id = uuid5(document_id, "version:1")
+        version_status = "failed" if filename == "harbor_deleted_archive.md" else "queued"
         await tx.execute(
-            text("""INSERT INTO document_versions(id,tenant_id,document_id,version_number,checksum,storage_key,processing_status)
-              VALUES(:id,:tenant,:document,1,:checksum,:key,'queued') ON CONFLICT(document_id,version_number) DO NOTHING"""),
+            text(f"""INSERT INTO document_versions(id,tenant_id,document_id,version_number,checksum,storage_key,processing_status)
+              VALUES(:id,:tenant,:document,1,:checksum,:key,'{version_status}') ON CONFLICT(document_id,version_number) DO NOTHING"""),
             {
                 "id": version_id,
                 "tenant": tenant_id,
@@ -101,28 +104,13 @@ async def seed_documents(
                 "key": storage_key,
             },
         )
+        job_status = "failed" if filename == "harbor_deleted_archive.md" else "queued"
+        job_error = "'document_deleted'" if filename == "harbor_deleted_archive.md" else "NULL"
         await tx.execute(
-            text("""INSERT INTO ingestion_jobs(tenant_id,document_id,document_version_id)
-              VALUES(:tenant,:document,:version) ON CONFLICT(document_version_id) DO NOTHING"""),
+            text(f"""INSERT INTO ingestion_jobs(tenant_id,document_id,document_version_id,status,error_code)
+              VALUES(:tenant,:document,:version,'{job_status}',{job_error}) ON CONFLICT(document_version_id) DO NOTHING"""),
             {"tenant": tenant_id, "document": document_id, "version": version_id},
         )
-        if filename == "harbor_deleted_archive.md":
-            await tx.execute(
-                text(
-                    "UPDATE documents SET deleted_at=coalesce(deleted_at,now()),processing_status='failed' WHERE id=:id"
-                ),
-                {"id": document_id},
-            )
-            await tx.execute(
-                text("UPDATE document_versions SET processing_status='failed' WHERE id=:id"),
-                {"id": version_id},
-            )
-            await tx.execute(
-                text(
-                    "UPDATE ingestion_jobs SET status='failed',error_code='document_deleted' WHERE document_version_id=:id"
-                ),
-                {"id": version_id},
-            )
         if filename == "harbor_inspection.md":
             principal_type, principal_id, effect = "role", "manager", "allow"
         elif filename == "cedar_financial.md":
