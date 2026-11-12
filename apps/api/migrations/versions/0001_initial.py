@@ -146,7 +146,7 @@ def upgrade() -> None:
         "CREATE POLICY user_self ON users USING (id = nullif(current_setting('app.user_id',true),'')::uuid OR current_setting('app.auth_lookup',true)='true') WITH CHECK (id = nullif(current_setting('app.user_id',true),'')::uuid)"
     )
     op.execute(
-        "CREATE POLICY tenant_admin_user_read ON users FOR SELECT USING (current_setting('app.role',true)='admin' AND EXISTS (SELECT 1 FROM memberships m WHERE m.user_id=users.id AND m.tenant_id=nullif(current_setting('app.tenant_id',true),'')::uuid AND m.role='admin'))"
+        "CREATE POLICY tenant_admin_user_read ON users FOR SELECT USING (current_setting('app.role',true)='admin' AND EXISTS (SELECT 1 FROM memberships m WHERE m.user_id=users.id AND m.tenant_id=nullif(current_setting('app.tenant_id',true),'')::uuid))"
     )
     # The broad grant policy is document scoped and non-recursive: it only reads grants.
     op.execute("""

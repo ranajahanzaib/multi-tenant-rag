@@ -177,24 +177,25 @@ export default function App() {
   async function refresh(t = tenant, currentIdentity = identity) {
     if (!t) return;
     try {
-      const [l, d, p, c] = await Promise.all([
+      const results = await Promise.allSettled([
         request<Lease[]>("/api/leases", t),
         request<Doc[]>("/api/documents", t),
         request<Property[]>("/api/properties", t),
         request<Chat[]>("/api/chats", t),
       ]);
-      setLeases(l);
-      setDocs(d);
-      setProperties(p);
-      setChats(c);
+      if (results[0].status === "fulfilled") setLeases(results[0].value);
+      if (results[1].status === "fulfilled") setDocs(results[1].value);
+      if (results[2].status === "fulfilled") setProperties(results[2].value);
+      if (results[3].status === "fulfilled") setChats(results[3].value);
+
       const activeIdent = currentIdentity ?? identity;
       if (activeIdent?.organizations.find((o) => o.id === t)?.role === "admin") {
-        const [m, a] = await Promise.all([
+        const [mRes, aRes] = await Promise.allSettled([
           request<Member[]>("/api/tenants/current/members", t),
           request<AuditEvent[]>("/api/audit/events?limit=100", t),
         ]);
-        setMembers(m);
-        setAuditEvents(a);
+        if (mRes.status === "fulfilled") setMembers(mRes.value);
+        if (aRes.status === "fulfilled") setAuditEvents(aRes.value);
       }
     } catch (e) {
       setError((e as Error).message);
@@ -609,7 +610,12 @@ export default function App() {
             <button
               key={label}
               className={`nav-item ${section === label ? "active" : ""}`}
-              onClick={() => setSection(label)}
+              onClick={() => {
+                setSection(label);
+                if (label === "Members" || label === "Audit" || label === "Overview" || label === "Leases" || label === "Knowledge" || label === "Properties" || label === "Assistant") {
+                  void refresh();
+                }
+              }}
             >
               <Icon size={17} />
               {label}

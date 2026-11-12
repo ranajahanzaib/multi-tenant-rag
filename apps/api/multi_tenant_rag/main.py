@@ -1523,18 +1523,24 @@ async def load_chat(
             citations = metadata.get("citations", [])
             valid = True
             for citation in citations:
+                citation_id = citation.get("id")
+                try:
+                    c_uuid = UUID(str(citation_id))
+                except (ValueError, TypeError):
+                    valid = False
+                    break
                 if citation.get("type") == "document":
                     found = await tx.execute(
                         text("""SELECT c.id FROM document_chunks c JOIN documents d
                           ON d.id=c.document_id JOIN document_versions v ON v.id=c.document_version_id
                             AND v.document_id=d.id AND v.version_number=d.current_version
                           WHERE c.id=:id AND d.deleted_at IS NULL"""),
-                        {"id": citation.get("id")},
+                        {"id": c_uuid},
                     )
                     valid = valid and found.scalar_one_or_none() is not None
                 elif citation.get("type") == "lease":
                     found = await tx.execute(
-                        text("SELECT id FROM leases WHERE id=:id"), {"id": citation.get("id")}
+                        text("SELECT id FROM leases WHERE id=:id"), {"id": c_uuid}
                     )
                     valid = valid and found.scalar_one_or_none() is not None
             if not valid:
@@ -1589,17 +1595,22 @@ async def add_chat_message(
         for citation in citations if isinstance(citations, list) else []:
             if not isinstance(citation, dict):
                 continue
+            citation_id = citation.get("id")
+            try:
+                c_uuid = UUID(str(citation_id))
+            except (ValueError, TypeError) as err:
+                raise HTTPException(409, "Source authorization changed while preparing the answer") from err
             if citation.get("type") == "document":
                 source = await tx.execute(
                     text("""SELECT c.id FROM document_chunks c JOIN documents d
                       ON d.id=c.document_id JOIN document_versions v ON v.id=c.document_version_id
                         AND v.document_id=d.id AND v.version_number=d.current_version
                       WHERE c.id=:id AND d.deleted_at IS NULL"""),
-                    {"id": citation.get("id")},
+                    {"id": c_uuid},
                 )
             elif citation.get("type") == "lease":
                 source = await tx.execute(
-                    text("SELECT id FROM leases WHERE id=:id"), {"id": citation.get("id")}
+                    text("SELECT id FROM leases WHERE id=:id"), {"id": c_uuid}
                 )
             else:
                 continue
