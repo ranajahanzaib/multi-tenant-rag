@@ -646,8 +646,8 @@ async def leases(
           (l.expires_on-coalesce(nullif(current_setting('app.demo_date',true),'')::date,current_date)) AS days_until_expiration,
           p.name AS property_name,u.unit_number
           FROM leases l JOIN properties p ON p.id=l.property_id JOIN units u ON u.id=l.unit_id
-          WHERE (:days IS NULL OR l.expires_on BETWEEN coalesce(nullif(current_setting('app.demo_date',true),'')::date,current_date)
-            AND coalesce(nullif(current_setting('app.demo_date',true),'')::date,current_date) + (:days * interval '1 day'))
+          WHERE (CAST(:days AS integer) IS NULL OR l.expires_on BETWEEN coalesce(nullif(current_setting('app.demo_date',true),'')::date,current_date)
+            AND coalesce(nullif(current_setting('app.demo_date',true),'')::date,current_date) + CAST(:days AS integer))
           ORDER BY l.expires_on"""),
             {"days": within_days},
         )
