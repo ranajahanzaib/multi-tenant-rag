@@ -1599,7 +1599,9 @@ async def add_chat_message(
             try:
                 c_uuid = UUID(str(citation_id))
             except (ValueError, TypeError) as err:
-                raise HTTPException(409, "Source authorization changed while preparing the answer") from err
+                raise HTTPException(
+                    409, "Source authorization changed while preparing the answer"
+                ) from err
             if citation.get("type") == "document":
                 source = await tx.execute(
                     text("""SELECT c.id FROM document_chunks c JOIN documents d
