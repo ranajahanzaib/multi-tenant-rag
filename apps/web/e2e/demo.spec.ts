@@ -96,7 +96,7 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByRole("button", { name: "Save lease" }).click();
   const row = page.getByRole('row').filter({ hasText: reference });
 await expect(row).toBeVisible({ timeout: 10_000 });
-  const row = page.getByRole("row").filter({ hasText: reference });
+  await row.getByRole("button", { name: "Edit" }).click();
   await row.getByRole("button", { name: "Edit" }).click();
   const updatedReference = `${reference}-EDITED`;
   await page.getByLabel("Lease reference").fill(updatedReference);
