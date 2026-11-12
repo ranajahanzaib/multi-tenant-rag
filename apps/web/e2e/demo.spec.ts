@@ -107,7 +107,23 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByLabel("Expires on").fill(isoDate(expires));
   await page.getByLabel("Notice period (days)").fill("30");
   const trace: string[] = [];
+  page.on("request", (req) => {
+    if (req.url().includes("/api/")) {
+      trace.push(`REQ ${req.method()} ${req.url()}`);
+    }
+  });
+  page.on("requestfailed", (req) => {
+    trace.push(
+      `FAILED ${req.method()} ${req.url()} ${req.failure()?.errorText}`,
+    );
+  });
+  page.on("console", (msg) => trace.push(`console.${msg.type()} ${msg.text()}`));
+  page.on("pageerror", (err) => trace.push(`pageerror ${err.message}`));
   page.on("response", async (res) => {
+    if (res.url().includes("/api/leases")) {
+      const text = await res.text().catch(() => "<unreadable>");
+      trace.push(`BODY ${res.status()} ${text.slice(0, 600)}`);
+    }
     if (res.url().includes("/api/")) {
       trace.push(`${res.request().method()} ${res.url()} ${res.status()}`);
     }
