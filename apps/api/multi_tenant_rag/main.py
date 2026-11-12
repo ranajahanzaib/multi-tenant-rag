@@ -1355,14 +1355,18 @@ async def ask(
             chunks = [dict(row) for row in doc_result.mappings()]
             if not chunks:
                 fallback_terms = [str(r["reference"]) for r in records if r.get("reference")]
-                fallback_q = " ".join(fallback_terms) if fallback_terms else "lease renewal"
+                fallback_q = (
+                    " or ".join(fallback_terms + ["lease", "renewal"])
+                    if fallback_terms
+                    else "lease or renewal"
+                )
                 fallback_result = await tx.execute(
                     text("""SELECT d.id,d.title,c.content,c.page_number,c.chunk_index,
-                  ts_rank(c.search_vector,plainto_tsquery('english',:q)) AS rrf FROM document_chunks c
+                  ts_rank(c.search_vector,websearch_to_tsquery('english',:q)) AS rrf FROM document_chunks c
                   JOIN documents d ON d.id=c.document_id
                   JOIN document_versions v ON v.id=c.document_version_id AND v.document_id=d.id
                     AND v.version_number=d.current_version
-                  WHERE c.search_vector @@ plainto_tsquery('english',:q)
+                  WHERE c.search_vector @@ websearch_to_tsquery('english',:q)
                   ORDER BY rrf DESC LIMIT 8"""),
                     {"q": fallback_q},
                 )
