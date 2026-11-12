@@ -133,3 +133,6 @@ jobs:
           CI: "true"
           E2E_API_URL: http://127.0.0.1:8000
         run: pnpm run test:e2e
+      - name: Show API log on failure
+        if: failure()
+        run: tail -n 200 /tmp/multi-tenant-rag-api.log
