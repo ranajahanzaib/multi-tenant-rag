@@ -106,13 +106,27 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByLabel("Starts on").fill(isoDate(new Date()));
   await page.getByLabel("Expires on").fill(isoDate(expires));
   await page.getByLabel("Notice period (days)").fill("30");
+  const trace: string[] = [];
+  page.on("response", async (res) => {
+    if (res.url().includes("/api/")) {
+      trace.push(`${res.request().method()} ${res.url()} ${res.status()}`);
+    }
+  });
+  page.on("framenavigated", (f) => trace.push(`navigated ${f.url()}`));
   await page.getByRole("button", { name: "Save lease" }).click();
   await expect(page.locator(".alert")).toBeHidden();
   await expect(
     page.getByRole("heading", { name: "Record a lease" }),
   ).toBeHidden();
   const row = page.getByRole("row").filter({ hasText: reference });
-  await expect(row).toBeVisible({ timeout: 15_000 });
+  try {
+    await expect(row).toBeVisible({ timeout: 15_000 });
+  } catch (error) {
+    const body = (await page.locator("body").innerText()).slice(0, 2000);
+    throw new Error(
+      `Lease row missing.\nAPI trace:\n${trace.join("\n")}\nPage text:\n${body}\n${error}`,
+    );
+  }
   await row.getByRole("button", { name: "Edit" }).click();
   await expect(
     page.getByRole("heading", { name: `Edit lease ${reference}` }),
