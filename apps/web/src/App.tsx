@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const api = import.meta.env.VITE_API_URL || "";
 const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
@@ -174,8 +174,10 @@ export default function App() {
     })
     .toUpperCase();
 
+  const refreshSeq = useRef(0);
   async function refresh(t = tenant, currentIdentity = identity) {
     if (!t) return;
+    const seq = ++refreshSeq.current;
     try {
       const results = await Promise.allSettled([
         request<Lease[]>("/api/leases", t),
@@ -183,6 +185,8 @@ export default function App() {
         request<Property[]>("/api/properties", t),
         request<Chat[]>("/api/chats", t),
       ]);
+      // Ignore stale responses from an older, overlapping refresh.
+      if (seq !== refreshSeq.current) return;
       if (results[0].status === "fulfilled") setLeases(results[0].value);
       if (results[1].status === "fulfilled") setDocs(results[1].value);
       if (results[2].status === "fulfilled") setProperties(results[2].value);
