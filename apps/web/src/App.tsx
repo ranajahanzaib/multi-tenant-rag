@@ -341,26 +341,39 @@ export default function App() {
       e.target.value = "";
     }
   }
-  async function submitLease(e: React.FormEvent) {
+  async function submitLease(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
     try {
+      const notice = String(form.get("notice") || "");
+      const noticeRequired =
+        notice === "unknown"
+          ? null
+          : notice === "none"
+            ? false
+            : notice === "required"
+              ? true
+              : leaseDraft.noticeRequired;
+      const noticeDaysValue = String(
+        form.get("notice_days") ?? leaseDraft.noticeDays,
+      );
       await request("/api/leases", tenant, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          property_id: leaseDraft.propertyId,
-          unit_id: leaseDraft.unitId,
-          reference: leaseDraft.reference,
-          tenant_name: leaseDraft.tenantName,
-          starts_on: leaseDraft.startsOn,
-          expires_on: leaseDraft.expiresOn,
-          renewal_notice_required: leaseDraft.noticeRequired,
+          property_id: String(form.get("property_id") || leaseDraft.propertyId),
+          unit_id: String(form.get("unit_id") || leaseDraft.unitId),
+          reference: String(form.get("reference") || leaseDraft.reference),
+          tenant_name: String(form.get("tenant_name") || leaseDraft.tenantName),
+          starts_on: String(form.get("starts_on") || leaseDraft.startsOn),
+          expires_on: String(form.get("expires_on") || leaseDraft.expiresOn),
+          renewal_notice_required: noticeRequired,
           renewal_notice_days:
-            leaseDraft.noticeRequired === true
-              ? Number(leaseDraft.noticeDays)
-              : leaseDraft.noticeRequired === false
+            noticeRequired === true
+              ? Number(noticeDaysValue)
+              : noticeRequired === false
                 ? 0
                 : null,
         }),
@@ -389,8 +402,15 @@ export default function App() {
     setUnits([]);
     if (!propertyId) return;
     try {
-      setUnits(
-        await request<Unit[]>(`/api/properties/${propertyId}/units`, tenant),
+      const fetchedUnits = await request<Unit[]>(
+        `/api/properties/${propertyId}/units`,
+        tenant,
+      );
+      setUnits(fetchedUnits);
+      setLeaseDraft((draft) =>
+        draft.propertyId === propertyId && !draft.unitId && fetchedUnits[0]
+          ? { ...draft, unitId: fetchedUnits[0].id }
+          : draft,
       );
     } catch (e) {
       setError((e as Error).message);
@@ -1193,6 +1213,7 @@ export default function App() {
                     <label>
                       Property
                       <select
+                        name="property_id"
                         value={leaseDraft.propertyId}
                         onChange={(e) => void selectProperty(e.target.value)}
                         required
@@ -1208,6 +1229,7 @@ export default function App() {
                     <label>
                       Unit
                       <select
+                        name="unit_id"
                         value={leaseDraft.unitId}
                         onChange={(e) =>
                           setLeaseDraft((d) => ({
@@ -1229,6 +1251,7 @@ export default function App() {
                     <label>
                       Lease reference
                       <input
+                        name="reference"
                         value={leaseDraft.reference}
                         onChange={(e) =>
                           setLeaseDraft((d) => ({
@@ -1243,6 +1266,7 @@ export default function App() {
                     <label>
                       Resident name
                       <input
+                        name="tenant_name"
                         value={leaseDraft.tenantName}
                         onChange={(e) =>
                           setLeaseDraft((d) => ({
@@ -1257,6 +1281,7 @@ export default function App() {
                     <label>
                       Starts on
                       <input
+                        name="starts_on"
                         type="date"
                         value={leaseDraft.startsOn}
                         onChange={(e) =>
@@ -1271,6 +1296,7 @@ export default function App() {
                     <label>
                       Expires on
                       <input
+                        name="expires_on"
                         type="date"
                         value={leaseDraft.expiresOn}
                         onChange={(e) =>
@@ -1285,6 +1311,7 @@ export default function App() {
                     <label>
                       Renewal notice requirement
                       <select
+                        name="notice"
                         value={
                           leaseDraft.noticeRequired === null
                             ? "unknown"
@@ -1310,6 +1337,7 @@ export default function App() {
                     <label>
                       Notice period (days)
                       <input
+                        name="notice_days"
                         type="number"
                         min={0}
                         max={3650}

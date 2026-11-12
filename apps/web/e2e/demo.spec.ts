@@ -76,7 +76,13 @@ test("creates an authorized lease record through the browser", async ({
 }) => {
   await signIn(page);
   await page.locator("nav").getByRole("button", { name: "Leases" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Lease portfolio" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Add lease" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Record a lease" }),
+  ).toBeVisible();
   const expires = new Date();
   expires.setDate(expires.getDate() + 30);
   const isoDate = (value: Date) => {
@@ -85,9 +91,15 @@ test("creates an authorized lease record through the browser", async ({
     );
     return local.toISOString().slice(0, 10);
   };
-  await page.getByLabel("Property").selectOption({ label: "Cedar Court" });
-  await expect(page.getByLabel("Unit")).toBeEnabled();
-  await page.getByLabel("Unit").selectOption({ label: "4B" });
+  const propertySelect = page.getByLabel("Property");
+  await expect(
+    propertySelect.locator("option", { hasText: "Cedar Court" }),
+  ).toBeAttached();
+  await propertySelect.selectOption({ label: "Cedar Court" });
+  const unitSelect = page.getByLabel("Unit");
+  await expect(unitSelect).toBeEnabled();
+  await expect(unitSelect.locator("option", { hasText: "4B" })).toBeAttached();
+  await unitSelect.selectOption({ label: "4B" });
   const reference = `E2E-${Date.now()}`;
   await page.getByLabel("Lease reference").fill(reference);
   await page.getByLabel("Resident name").fill("Jordan Example");
@@ -95,6 +107,10 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByLabel("Expires on").fill(isoDate(expires));
   await page.getByLabel("Notice period (days)").fill("30");
   await page.getByRole("button", { name: "Save lease" }).click();
+  await expect(page.locator(".alert")).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "Record a lease" }),
+  ).toBeHidden();
   const row = page.getByRole("row").filter({ hasText: reference });
   await expect(row).toBeVisible({ timeout: 15_000 });
   await row.getByRole("button", { name: "Edit" }).click();
@@ -104,6 +120,7 @@ test("creates an authorized lease record through the browser", async ({
   const updatedReference = `${reference}-EDITED`;
   await page.getByLabel("Lease reference").fill(updatedReference);
   await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.locator(".alert")).toBeHidden();
   await expect(page.getByText(updatedReference)).toBeVisible({
     timeout: 10_000,
   });
