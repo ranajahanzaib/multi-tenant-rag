@@ -54,7 +54,7 @@ test("stores assistant conversations and reopens the authorized history", async 
   await expect(page.getByText(/NC-2048/).first()).toBeVisible({ timeout: 15_000 });
   await page.locator("nav").getByRole("button", { name: "Overview" }).click();
   await page.locator("nav").getByRole("button", { name: "Assistant" }).click();
-  await page.getByRole("button", { name: /Which leases expire/ }).click();
+  await page.getByRole("button", { name: "Which leases expire in the next 60 days and need renewal notices?", exact: true }).click();
   await expect(page.getByText(/NC-2048/).first()).toBeVisible();
 });
 
@@ -94,7 +94,8 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByLabel("Expires on").fill(isoDate(expires));
   await page.getByLabel("Notice period (days)").fill("30");
   await page.getByRole("button", { name: "Save lease" }).click();
-  await expect(page.getByText(reference)).toBeVisible({ timeout: 10_000 });
+  const row = page.getByRole('row').filter({ hasText: reference });
+await expect(row).toBeVisible({ timeout: 10_000 });
   const row = page.getByRole("row").filter({ hasText: reference });
   await row.getByRole("button", { name: "Edit" }).click();
   const updatedReference = `${reference}-EDITED`;
