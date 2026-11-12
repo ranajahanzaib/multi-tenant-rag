@@ -139,8 +139,19 @@ test("creates an authorized lease record through the browser", async ({
     await expect(row).toBeVisible({ timeout: 15_000 });
   } catch (error) {
     const body = (await page.locator("body").innerText()).slice(0, 2000);
+    let direct = "";
+    try {
+      const api = process.env.E2E_API_URL || "http://127.0.0.1:8000";
+      const me = await (await page.request.get(`${api}/api/auth/me`)).json();
+      const res = await page.request.get(`${api}/api/leases`, {
+        headers: { "X-Tenant-ID": me.organizations[0].id },
+      });
+      direct = `${res.status()} ${(await res.text()).slice(0, 1500)}`;
+    } catch (e) {
+      direct = `probe failed: ${e}`;
+    }
     throw new Error(
-      `Lease row missing.\nAPI trace:\n${trace.join("\n")}\nPage text:\n${body}\n${error}`,
+      `Lease row missing.\nDirect GET /api/leases: ${direct}\nAPI trace:\n${trace.join("\n")}\nPage text:\n${body}\n${error}`,
     );
   }
   await row.getByRole("button", { name: "Edit" }).click();
