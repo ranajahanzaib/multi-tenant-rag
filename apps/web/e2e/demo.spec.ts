@@ -86,6 +86,7 @@ test("creates an authorized lease record through the browser", async ({
     return local.toISOString().slice(0, 10);
   };
   await page.getByLabel("Property").selectOption({ label: "Cedar Court" });
+  await expect(page.getByLabel("Unit")).toBeEnabled();
   await page.getByLabel("Unit").selectOption({ label: "4B" });
   const reference = `E2E-${Date.now()}`;
   await page.getByLabel("Lease reference").fill(reference);
@@ -94,9 +95,12 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByLabel("Expires on").fill(isoDate(expires));
   await page.getByLabel("Notice period (days)").fill("30");
   await page.getByRole("button", { name: "Save lease" }).click();
-  await expect(page.getByText(reference)).toBeVisible({ timeout: 15000 });
-  const row = page.getByRole('row').filter({ hasText: reference });
+  const row = page.getByRole("row").filter({ hasText: reference });
+  await expect(row).toBeVisible({ timeout: 15_000 });
   await row.getByRole("button", { name: "Edit" }).click();
+  await expect(
+    page.getByRole("heading", { name: `Edit lease ${reference}` }),
+  ).toBeVisible();
   const updatedReference = `${reference}-EDITED`;
   await page.getByLabel("Lease reference").fill(updatedReference);
   await page.getByRole("button", { name: "Save changes" }).click();

@@ -1129,6 +1129,7 @@ export default function App() {
                     <label>
                       Renewal notice requirement
                       <select
+                        name="notice"
                         value={editNotice}
                         onChange={(event) =>
                           setEditNotice(
