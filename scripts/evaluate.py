@@ -61,7 +61,12 @@ def main() -> int:
         results = []
         for case in cases:
             if "request" in case:
-                selected_tenant = uuid5(NAMESPACE_DNS, "tenantground.example:summit")
+                tenant_target = case.get("tenant")
+                selected_tenant = (
+                    uuid5(NAMESPACE_DNS, f"tenantground.example:{tenant_target}")
+                    if tenant_target
+                    else tenant_id
+                )
                 response: dict[str, Any] = {}
                 try:
                     response = send(
