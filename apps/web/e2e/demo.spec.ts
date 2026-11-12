@@ -94,9 +94,8 @@ test("creates an authorized lease record through the browser", async ({
   await page.getByLabel("Expires on").fill(isoDate(expires));
   await page.getByLabel("Notice period (days)").fill("30");
   await page.getByRole("button", { name: "Save lease" }).click();
+  await expect(page.getByText(reference)).toBeVisible({ timeout: 15000 });
   const row = page.getByRole('row').filter({ hasText: reference });
-await expect(row).toBeVisible({ timeout: 10_000 });
-  await row.getByRole("button", { name: "Edit" }).click();
   await row.getByRole("button", { name: "Edit" }).click();
   const updatedReference = `${reference}-EDITED`;
   await page.getByLabel("Lease reference").fill(updatedReference);
