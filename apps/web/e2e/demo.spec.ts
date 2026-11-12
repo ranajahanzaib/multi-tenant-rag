@@ -19,8 +19,8 @@ test("answers the lease renewal question with a seeded record", async ({
     .fill(
       "Which leases expire within the next 60 days and need renewal notices?",
     );
-  await page.getByRole("button", { name: /^Ask/ }).click();
-  await expect(page.getByText(/NC-2048/)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  await expect(page.getByText(/NC-2048/).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/renewal notice due/i)).toBeVisible();
   await expect(page.getByText("Evidence-backed response")).toBeVisible();
   await expect(
@@ -46,26 +46,26 @@ test("stores assistant conversations and reopens the authorized history", async 
   page,
 }) => {
   await signIn(page);
-  await page.getByRole("button", { name: "Assistant" }).click();
+  await page.locator("nav").getByRole("button", { name: "Assistant" }).click();
   await page
     .getByLabel("Your question")
     .fill("Which leases expire in the next 60 days and need renewal notices?");
   await page.getByRole("button", { name: "Get answer" }).click();
-  await expect(page.getByText(/NC-2048/)).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "Overview" }).click();
-  await page.getByRole("button", { name: "Assistant" }).click();
+  await expect(page.getByText(/NC-2048/).first()).toBeVisible({ timeout: 15_000 });
+  await page.locator("nav").getByRole("button", { name: "Overview" }).click();
+  await page.locator("nav").getByRole("button", { name: "Assistant" }).click();
   await page.getByRole("button", { name: /Which leases expire/ }).click();
-  await expect(page.getByText(/NC-2048/)).toBeVisible();
+  await expect(page.getByText(/NC-2048/).first()).toBeVisible();
 });
 
 test("shows organization member controls and audit history to administrators", async ({
   page,
 }) => {
   await signIn(page);
-  await page.getByRole("button", { name: "Members" }).click();
+  await page.locator("nav").getByRole("button", { name: "Members" }).click();
   await expect(page.getByRole("heading", { name: "Members" })).toBeVisible();
   await expect(page.getByText("admin@northstar.example")).toBeVisible();
-  await page.getByRole("button", { name: "Audit" }).click();
+  await page.locator("nav").getByRole("button", { name: "Audit" }).click();
   await expect(
     page.getByRole("heading", { name: "Audit history" }),
   ).toBeVisible();
@@ -75,7 +75,7 @@ test("creates an authorized lease record through the browser", async ({
   page,
 }) => {
   await signIn(page);
-  await page.getByRole("button", { name: "Leases" }).click();
+  await page.locator("nav").getByRole("button", { name: "Leases" }).click();
   await page.getByRole("button", { name: "Add lease" }).click();
   const expires = new Date();
   expires.setDate(expires.getDate() + 30);
@@ -109,7 +109,7 @@ test("replaces a document version and shows version history", async ({
   page,
 }) => {
   await signIn(page);
-  await page.getByRole("button", { name: "Knowledge" }).click();
+  await page.locator("nav").getByRole("button", { name: "Knowledge" }).click();
   const row = page
     .getByRole("row")
     .filter({ hasText: "Harbor Residential Lease" });

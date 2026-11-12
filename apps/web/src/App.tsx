@@ -174,7 +174,7 @@ export default function App() {
     })
     .toUpperCase();
 
-  async function refresh(t = tenant) {
+  async function refresh(t = tenant, currentIdentity = identity) {
     if (!t) return;
     try {
       const [l, d, p, c] = await Promise.all([
@@ -187,7 +187,8 @@ export default function App() {
       setDocs(d);
       setProperties(p);
       setChats(c);
-      if (identity?.organizations.find((o) => o.id === t)?.role === "admin") {
+      const activeIdent = currentIdentity ?? identity;
+      if (activeIdent?.organizations.find((o) => o.id === t)?.role === "admin") {
         const [m, a] = await Promise.all([
           request<Member[]>("/api/tenants/current/members", t),
           request<AuditEvent[]>("/api/audit/events?limit=100", t),
@@ -203,7 +204,10 @@ export default function App() {
     request<typeof identity>("/api/auth/me")
       .then((x) => {
         setIdentity(x);
-        if (x?.organizations[0]) setTenant(x.organizations[0].id);
+        if (x?.organizations[0]) {
+          setTenant(x.organizations[0].id);
+          void refresh(x.organizations[0].id, x);
+        }
       })
       .catch(() => {})
       .finally(() => setAuthLoading(false));
@@ -234,7 +238,9 @@ export default function App() {
       });
       const me = await request<NonNullable<typeof identity>>("/api/auth/me");
       setIdentity(me);
-      setTenant(me.organizations[0]?.id || "");
+      const targetTenant = me.organizations[0]?.id || "";
+      setTenant(targetTenant);
+      await refresh(targetTenant, me);
     } catch (e) {
       setError((e as Error).message);
     } finally {
