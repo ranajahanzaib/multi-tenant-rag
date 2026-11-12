@@ -151,7 +151,7 @@ def upgrade() -> None:
     # The broad grant policy is document scoped and non-recursive: it only reads grants.
     op.execute("""
       CREATE POLICY document_read_policy ON documents AS RESTRICTIVE FOR SELECT USING (
-        tenant_id = nullif(current_setting('app.tenant_id',true),'')::uuid AND deleted_at IS NULL AND (
+        tenant_id = nullif(current_setting('app.tenant_id',true),'')::uuid AND (deleted_at IS NULL OR current_setting('app.role',true)='admin') AND (
           current_setting('app.role',true)='admin' OR (
             (visibility='tenant' OR uploaded_by=nullif(current_setting('app.user_id',true),'')::uuid OR
              EXISTS (SELECT 1 FROM document_grants g WHERE g.document_id=documents.id AND g.tenant_id=documents.tenant_id
