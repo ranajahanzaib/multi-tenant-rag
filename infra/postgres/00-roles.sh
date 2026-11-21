@@ -5,7 +5,7 @@ set -eu
 : "${RUNTIME_PASSWORD:?RUNTIME_PASSWORD is required}"
 : "${WORKER_PASSWORD:?WORKER_PASSWORD is required}"
 
-psql --set=ON_ERROR_STOP=1 \
+psql --dbname="${POSTGRES_DB:-postgres}" --set=ON_ERROR_STOP=1 \
   --set=migrator_password="$MIGRATOR_PASSWORD" \
   --set=runtime_password="$RUNTIME_PASSWORD" \
   --set=worker_password="$WORKER_PASSWORD" <<'SQL'

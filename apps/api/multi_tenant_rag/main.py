@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 from urllib.request import Request as URLRequest
 from urllib.request import urlopen
 from uuid import UUID, uuid4
@@ -1304,6 +1305,7 @@ async def ask(
         except Exception:
             # Missing local model/cache keeps the system useful in lexical-only mode.
             pass
+    chunks: list[dict[str, Any]] = []
     async with tenant_transaction(tenant, UUID(user["id"]), role) as tx:
         result = await tx.execute(
             text("""SELECT l.id,l.reference,l.tenant_name,l.expires_on,l.renewal_notice_required,
@@ -1340,6 +1342,7 @@ async def ask(
                     "model": settings.embedding_model,
                 },
             )
+            chunks = [dict(row) for row in doc_result.mappings()]
             retrieval_mode = "hybrid_rrf"
         else:
             doc_result = await tx.execute(
