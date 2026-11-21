@@ -4,6 +4,8 @@
 
 Multi-Tenant RAG is a reference application for combining structured property-management records with private documents. It focuses on a boundary that ordinary RAG examples leave out: every structured record, document, retrieval result, and source citation must remain inside the authenticated user's active organization and document permissions.
 
+![Multi-Tenant RAG dashboard with seeded lease expirations and private documents](docs/screenshots/overview.png)
+
 ## What is implemented
 
 - FastAPI API with Argon2 password hashing, signed short-lived JWTs in HTTP-only cookies, and current membership checks.
@@ -17,6 +19,18 @@ Multi-Tenant RAG is a reference application for combining structured property-ma
 - Persistent chat history with current source reauthorization and a citation preview.
 - Administrator member-role and access-revocation controls, audit history, and a limited live Security Lab runner.
 - Synthetic seed data with 12 leases, 13 document fixtures, a revoked grant, a soft-deleted document, an intentional notice-term conflict, and a shared user with different organization roles.
+
+## Screenshots
+
+The screenshots below were captured from the running local Compose stack using the synthetic seed data.
+
+### Evidence-backed assistant
+
+![Assistant response with lease records and source evidence](docs/screenshots/assistant.png)
+
+### Live Security Lab
+
+![Security Lab report with all six scenarios passing](docs/screenshots/security-lab.png)
 
 ## Scope
 
@@ -71,7 +85,7 @@ Cedar Estates:         viewer
 
 `make init-env` creates `.env` with fresh random database, JWT, and demo passwords and sets owner-only file permissions. Keep it private. Demo seeding refuses to run in production or with `DEMO_MODE=false`. `make reset-demo` removes Docker volumes and all local data; the database role initialization script runs only when the PostgreSQL volume is first created.
 
-The ingestion worker downloads `BAAI/bge-small-en-v1.5` on its first embedding run. If model loading is unavailable, it still indexes extracted text for PostgreSQL full-text retrieval. Evidence-only generation is the default. For optional local generation, set `LLM_PROVIDER=ollama`, then start `docker compose --profile local-ai up -d` and run `docker compose exec ollama ollama pull llama3.2`. If Ollama is unavailable or returns malformed/unapproved citations, the API falls back to its evidence-only answer.
+The worker and API load `BAAI/bge-small-en-v1.5` on their first embedding runs, which can make the first document indexing or assistant request slower. If model loading is unavailable, the worker still indexes extracted text for PostgreSQL full-text retrieval and the API falls back to lexical retrieval. Evidence-only generation is the default. For optional local generation, set `LLM_PROVIDER=ollama`, then start `docker compose --profile local-ai up -d` and run `docker compose exec ollama ollama pull llama3.2`. If Ollama is unavailable or returns malformed/unapproved citations, the API falls back to its evidence-only answer.
 
 ## Useful commands
 
