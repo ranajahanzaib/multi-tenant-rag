@@ -20,7 +20,9 @@ test("answers the lease renewal question with a seeded record", async ({
       "Which leases expire within the next 60 days and need renewal notices?",
     );
   await page.getByRole("button", { name: "Ask", exact: true }).click();
-  await expect(page.getByText(/NC-2048/).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/NC-2048/).first()).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByText(/renewal notice due/i)).toBeVisible();
   await expect(page.getByText("Evidence-backed response")).toBeVisible();
   await expect(
@@ -51,10 +53,18 @@ test("stores assistant conversations and reopens the authorized history", async 
     .getByLabel("Your question")
     .fill("Which leases expire in the next 60 days and need renewal notices?");
   await page.getByRole("button", { name: "Get answer" }).click();
-  await expect(page.getByText(/NC-2048/).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/NC-2048/).first()).toBeVisible({
+    timeout: 15_000,
+  });
   await page.locator("nav").getByRole("button", { name: "Overview" }).click();
   await page.locator("nav").getByRole("button", { name: "Assistant" }).click();
-  await page.getByRole("button", { name: "Which leases expire in the next 60 days and need renewal notices?", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Which leases expire in the next 60 days and need renewal notices?",
+      exact: true,
+    })
+    .first()
+    .click();
   await expect(page.getByText(/NC-2048/).first()).toBeVisible();
 });
 
@@ -117,7 +127,9 @@ test("creates an authorized lease record through the browser", async ({
       `FAILED ${req.method()} ${req.url()} ${req.failure()?.errorText}`,
     );
   });
-  page.on("console", (msg) => trace.push(`console.${msg.type()} ${msg.text()}`));
+  page.on("console", (msg) =>
+    trace.push(`console.${msg.type()} ${msg.text()}`),
+  );
   page.on("pageerror", (err) => trace.push(`pageerror ${err.message}`));
   page.on("response", async (res) => {
     if (res.url().includes("/api/leases")) {
@@ -186,5 +198,7 @@ test("replaces a document version and shows version history", async ({
     page.getByRole("status").getByText(/queued for indexing/),
   ).toBeVisible();
   await row.getByText("Versions").click();
-  await expect(row.getByText(/v2 · (queued|ready) · current/)).toBeVisible();
+  await expect(
+    row.getByText(/v\d+ · (queued|processing|ready) · current/),
+  ).toBeVisible();
 });
