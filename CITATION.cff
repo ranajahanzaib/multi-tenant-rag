@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use Multi-Tenant RAG in research or teaching, please cite this software."
+title: "Multi-Tenant RAG"
+version: 0.1.0
+authors:
+  - family-names: Rana
+    given-names: Jahanzaib
+    orcid: "https://orcid.org/0009-0006-7085-0440"
+repository-code: "https://github.com/ranajahanzaib/multi-tenant-rag"
+license: MIT
+abstract: "Multi-Tenant RAG is a reference application for combining structured property-management records with private documents. It ensures every structured record, document, retrieval result, and source citation remains inside the authenticated user's active organization and document permissions."
+keywords:
+  - rag
+  - multi-tenancy
+  - row-level-security
+  - pgvector
+  - fastapi
